@@ -1,4 +1,4 @@
-<%- include('../partials/header', { title: 'All Recipes' }) %>
+<%- include('../partials/header', { title: 'All Recipes', message: typeof message !== 'undefined' ? message : null }) %>
 
 <h1>All Recipes</h1>
 
@@ -24,5 +24,8 @@
     <% }) %>
   </tbody>
 </table>
+<div class="text-right mt-3">
+  <a href="/recipes/add" class="btn btn-success">Add Recipe</a>
+</div>
 
 <%- include('../partials/footer') %>

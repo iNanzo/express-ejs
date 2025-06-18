@@ -1,42 +1,59 @@
-// include Express
-const express = require('express');
-
-// create instance of Express app
-const app = express();
-
-// include .env file for credentials
+// Load environment variables
 require('dotenv').config();
 
-// server will listen on this port
-const port = 3000;
+// Include dependencies
+const express = require('express');
+const session = require('express-session');
+const methodOverride = require('method-override');
+const path = require('path');
 
-// manage database connectivity
-require('./models/mongoose');
+// Create Express app instance
+const app = express();
 
-// reference test json file of users
-const data = require('./test.json');
-
-// middleware and config
-app.set('view engine', 'ejs');
-app.use(express.static('public'));
+// Middleware: parse URL-encoded and JSON bodies
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// load routes AFTER app is created
-const recipeRoutes = require('./routes/recipes');
-app.use('/recipes', recipeRoutes);
+// Middleware: method override for DELETE/PUT support
+app.use(methodOverride('_method'));
 
-// index/home URL
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+
+// Serve static files from public directory
+app.use(express.static('public'));
+
+// Initialize session
+app.use(session({
+  secret: 'secret', // consider using process.env.SESSION_SECRET in production
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Make session messages available to views
+app.use((req, res, next) => {
+  res.locals.message = req.session.message;
+  delete req.session.message;
+  next();
+});
+
+// MongoDB connection
+require('./models/mongoose');
+
+// Load JSON test data
+const data = require('./test.json');
+
+// Route: Home
 app.get('/', (req, res) => {
   res.render('pages/index', { title: 'Home Page' });
 });
 
-// about URL
+// Route: About
 app.get('/about', (req, res) => {
   res.render('pages/about', { title: 'About Page' });
 });
 
-// users route
+// Route: Users Index
 app.get('/users', (req, res) => {
   res.render('users/index', {
     title: 'Users Page',
@@ -44,16 +61,21 @@ app.get('/users', (req, res) => {
   });
 });
 
-// view user by index (id-1)
+// Route: View single user by index (id - 1)
 app.get('/users/view/:id', (req, res) => {
   const id = parseInt(req.params.id);
   res.render('users/view', {
     title: 'User Page',
-    user: data[id - 1] // safer than using --
+    user: data[id - 1]
   });
 });
 
-// set server to listen for requests
+// Mount recipe routes
+const recipeRoutes = require('./routes/recipes');
+app.use('/recipes', recipeRoutes);
+
+// Start server
+const port = 3000;
 app.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
 });
