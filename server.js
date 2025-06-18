@@ -1,55 +1,59 @@
-//include Express
+// include Express
 const express = require('express');
 
-//server will listen on this port
-const port = 3000;
-
-//create instance of Express app
+// create instance of Express app
 const app = express();
 
-//ejs is templating engine
-app.set('view engine','ejs');
+// include .env file for credentials
+require('dotenv').config();
 
-//this will allow us to serve up static files, CSS, images & JS
+// server will listen on this port
+const port = 3000;
+
+// manage database connectivity
+require('./models/mongoose');
+
+// reference test json file of users
+const data = require('./test.json');
+
+// middleware and config
+app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-//reference test json file of users
-var data = require('./test.json');
+// load routes AFTER app is created
+const recipeRoutes = require('./routes/recipes');
+app.use('/recipes', recipeRoutes);
 
-//index/home URL
-app.get('/',(req,res)=>{
-    let title = "Home Page";
-    res.render('pages/index',{'title': title});
+// index/home URL
+app.get('/', (req, res) => {
+  res.render('pages/index', { title: 'Home Page' });
 });
 
-//about URL
-app.get('/about',(req,res)=>{
-    let title = "About Page";
-    res.render('pages/about',{'title': title});
+// about URL
+app.get('/about', (req, res) => {
+  res.render('pages/about', { title: 'About Page' });
 });
 
-//users route
-app.get('/users',(req,res)=>{
-    let title = "Users Page";
-    res.render('users/index',{
-      'title': title,
-      'users': data
-    });
+// users route
+app.get('/users', (req, res) => {
+  res.render('users/index', {
+    title: 'Users Page',
+    users: data
+  });
 });
 
-//add user/view route - we are cheating by using the array index - 1
-app.get('/users/view/:id', function(req, res) {
- var title = 'User Page';
- var id = req.params.id;
- res.render('users/view', {
-     title: title,
-     user: data[--id]
- });
+// view user by index (id-1)
+app.get('/users/view/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  res.render('users/view', {
+    title: 'User Page',
+    user: data[id - 1] // safer than using --
+  });
 });
 
-//Set server to listen for requests
+// set server to listen for requests
 app.listen(port, () => {
-  console.log(`Server running at port: ${port}`);
-  console.log(data);
+  console.log(`🚀 Server running at http://localhost:${port}`);
 });
-
